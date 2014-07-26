@@ -47,7 +47,7 @@ class MatrixMultiplyShaderClass
 		
 		struct Node
 		{
-			D3DXVECTOR4 cost;
+			int cost;
 			int id;
 		};
 public:
