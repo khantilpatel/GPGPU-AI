@@ -50,6 +50,22 @@ class MatrixMultiplyShaderClass
 			int cost;
 			int id;
 		};
+
+		struct Agent
+		{
+			int id;
+			D3DXVECTOR2 sourceLoc;
+			D3DXVECTOR2 targetLoc;
+		};
+
+		struct SearchResult
+		{
+			int agentId;
+			int finalCost;
+			D3DXVECTOR2 targetLoc;
+		};
+
+
 public:
 	MatrixMultiplyShaderClass();
 	MatrixMultiplyShaderClass(const MatrixMultiplyShaderClass&);

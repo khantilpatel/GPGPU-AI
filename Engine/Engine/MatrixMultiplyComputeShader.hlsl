@@ -16,6 +16,7 @@ struct ParentType
 
 struct Node
 {
+	float2 coords;
 	uint cost;
 	int id;
 };
@@ -23,7 +24,6 @@ struct Node
 struct Agent
 {
 	int id;
-
 	float2 sourceLoc;
 	float2 targetLoc;
 };
@@ -35,10 +35,6 @@ struct SearchResult
 	float2 targetLoc;
 };
 
-StructuredBuffer<BufType> agentsList : register(t0);
-StructuredBuffer<BufType> MatrixB : register(t1);
-Texture2D<float4> gRandomTex : register(t2);
-
 SamplerState samLinear
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -46,7 +42,17 @@ SamplerState samLinear
 	AddressV = WRAP;
 };
 
-RWStructuredBuffer<Node> BufferOut : register(u0);
+// Input List with Agents data from CPU
+StructuredBuffer<Agent> gAgentListInput : register(t0);
+
+// World map 2D Texture from CPU
+Texture2D<float4> gWorldMapTextureInput : register(t2);
+
+// Temp OpenList for A* executed by each Agent 
+RWStructuredBuffer<Node> gOpenListOut : register(u0);
+
+// Final Result of A* for each Agent
+RWStructuredBuffer<SearchResult> gBufferOut : register(u0);
 //RWStructuredBuffer<ParentType> BufferOutClone : register(u1);
 //
 
@@ -149,6 +155,71 @@ Node removePQ()
 [numthreads(1, 1, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
+	uint _GRID_RESOLUTION_X_AXIS = 8;
+	Agent agent = gAgentListInput[0];
+
+	Node nodeFirst;
+	nodeFirst.coords = agent.sourceLoc;
+
+	insertPQ(nodeFirst);
+
+	bool targetFound = false;
+	
+	while(!targetFound)
+	{
+		Node currentNode = removePQ();
+
+		int current_x = Node.x;
+		int current_y = Node.y;
+
+		if(_GRID_RESOLUTION_X_AXIS > (current_x+1)) // To the immidiate right
+		{
+
+		}
+
+		if(_GRID_RESOLUTION_X_AXIS > (current_x+1) && 0 <= (current_y-1)) // To the Right-Down
+		{
+				
+		}
+
+		if(0 <= (current_y-1)) // To Below/Down
+		{
+
+		}
+
+		if(0 <= (current_x-1) && 0 <= (current_y-1) ) //To Left-Down
+		{
+
+		}
+
+		if(0 <= (current_x-1)) //To Left
+		{
+		
+		}
+
+		if(0 <= (current_x-1) && _GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To Left-Up
+		{
+
+		}
+
+		if(_GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To Up
+		{
+
+		}
+
+		if(0 <= (current_x+1) && _GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To UP-RIGHT
+		{
+
+		}
+	}
+
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////
+//// Experimental Code Commented here, make use of it when needed //////////
+////////////////////////////////////////////////////////////////////////////
 	//uint i = 8;
 
 	//BufferOut[0].cost = 0;
@@ -200,7 +271,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
 
 
-		
+	/*	
 	Node node1;
 	node1.cost = 2;
 	node1.id = 1;
@@ -261,7 +332,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	BufferOut[0].id = pop.cost;
 
 	Node pop1 = removePQ();
-	BufferOut[0].id = pop1.cost;
+	BufferOut[0].id = pop1.cost;*/
 	/***************************************************************/
 	/*Node node11;
 	node11.cost = 2;
@@ -293,5 +364,3 @@ void main( uint3 DTid : SV_DispatchThreadID )
 	}*/
 		
 //	BufferOut = BufferOutClone;
-}
-

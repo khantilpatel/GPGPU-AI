@@ -62,8 +62,10 @@ ID3D11ShaderResourceView* TextureUtility::CreateRandomTexture2DSRV_New(ID3D11Dev
 {
 	HRESULT result;
 
-	const int DATA_SIZE = 16384;
-	const int DATA_SIZE_BLOCK = 128;
+	const int DATA_SIZE = 64;
+	const int DATA_SIZE_BLOCK = 8;
+	const int WALKABLE_NODE  = 0;
+	const int COLLISION_NODE = 1;
 	// 
 	// Create the random data.
 	//
@@ -75,11 +77,18 @@ ID3D11ShaderResourceView* TextureUtility::CreateRandomTexture2DSRV_New(ID3D11Dev
 
 			randomValues[counter].x = j;	//MathUtility::RandF(-1.0f, 100.0f);
 			randomValues[counter].y = i;	//MathUtility::RandF(-1.0f, 100.0f);
-			randomValues[counter].z = counter;	//MathUtility::RandF(-1.0f, 9.0f);
+			randomValues[counter].z = 0;	//MathUtility::RandF(-1.0f, 9.0f);
 			randomValues[counter].w = counter;	//MathUtility::RandF(-1.0f, 50.0f);
 			counter = counter+1;
 		}
 	}
+
+	// Setup Collision Nodes 
+	randomValues[20].z = COLLISION_NODE;
+	randomValues[28].z = COLLISION_NODE;
+	randomValues[36].z = COLLISION_NODE;
+	randomValues[45].z = COLLISION_NODE;
+	randomValues[53].z = COLLISION_NODE;
 
     D3D11_SUBRESOURCE_DATA initData;
     initData.pSysMem = randomValues;
