@@ -138,13 +138,13 @@ bool MatrixMultiplyShaderClass::createConstantBuffer(ID3D11Device* device, ID3D1
 	}
 
 	int NUM_NODES = 20;
-	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(BufType), NUM_ELEMENTS, &g_vBuf0[0], &m_matrixBuffer_A );
-	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(BufType), NUM_ELEMENTS, &g_vBuf1[0], &m_matrixBuffer_B);
-	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(Node), NUM_NODES, nullptr, &m_matrixBuffer_result );
+	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(Node), NUM_ELEMENTS, &g_vBuf0[0], &m_matrixBuffer_A );
+	//m_computeshader_helper->CreateStructuredBuffer( device, sizeof(BufType), NUM_ELEMENTS, &g_vBuf1[0], &m_matrixBuffer_B);
+	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(SearchResult), NUM_NODES, nullptr, &m_matrixBuffer_result );
 
 
 	m_computeshader_helper->CreateBufferSRV( device, m_matrixBuffer_A, &m_BufMatA_SRV );
-	m_computeshader_helper->CreateBufferSRV( device, m_matrixBuffer_B, &m_BufMatB_SRV );
+	//m_computeshader_helper->CreateBufferSRV( device, m_matrixBuffer_B, &m_BufMatB_SRV );
 	m_computeshader_helper->CreateBufferUAV( device, m_matrixBuffer_result, &m_BufResult_SRV );
 
 	TextureUtility* m_TextureUtility = new TextureUtility;
@@ -195,10 +195,10 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 	//{
 	//	return false;
 	//}
-	ID3D11ShaderResourceView* aRViews[3] = { m_BufMatA_SRV, m_BufMatB_SRV, m_WorldMap_SRV };
+	ID3D11ShaderResourceView* aRViews[2] = { m_BufMatA_SRV, m_WorldMap_SRV };
 	// Now render the prepared buffers with the shader.
 	deviceContext->CSSetShader( m_computeShader, nullptr, 0 );
-	deviceContext->CSSetShaderResources( 0, 3, aRViews );
+	deviceContext->CSSetShaderResources( 0, 2, aRViews );
 	deviceContext->CSSetUnorderedAccessViews( 0, 1, &m_BufResult_SRV, nullptr );
 	//if ( pCBCS && pCSData )
 	//{
@@ -226,14 +226,14 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 
 	ID3D11Buffer* debugbuf = m_computeshader_helper->CreateAndCopyToDebugBuf( device, deviceContext, m_matrixBuffer_result );
 	D3D11_MAPPED_SUBRESOURCE MappedResource; 
-	Node *p;
+	SearchResult *p;
 	deviceContext->Map( debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource );
 
 	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
 	// This is also a common trick to debug CS programs.
-	p = (Node*)MappedResource.pData;
+	p = (SearchResult*)MappedResource.pData;
 
-	Node nodes[20];
+	SearchResult nodes[20];
 	for (int i = 0; i <=20; i++)
 
 	{

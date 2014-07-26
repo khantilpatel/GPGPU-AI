@@ -49,169 +49,183 @@ StructuredBuffer<Agent> gAgentListInput : register(t0);
 Texture2D<float4> gWorldMapTextureInput : register(t2);
 
 // Temp OpenList for A* executed by each Agent 
-RWStructuredBuffer<Node> gOpenListOut : register(u0);
+RWStructuredBuffer<Node> gOpenListOut ;
 
 // Final Result of A* for each Agent
 RWStructuredBuffer<SearchResult> gBufferOut : register(u0);
 //RWStructuredBuffer<ParentType> BufferOutClone : register(u1);
 //
 
-void insertPQ(Node node){
-
-	uint currentSize = BufferOut[0].cost;
-	uint i = currentSize+1;
-
-	[allow_uav_condition]
-	while( i > 1 && BufferOut[i/2].cost > node.cost )
-	{
-		BufferOut[i] = BufferOut[i/2];
-		i = i/2;
-	}
-
-	BufferOut[i] = node;
-	BufferOut[0].cost = BufferOut[0].cost + 1;
-	//BufferOut[i] = node;
-	
-}
-
-Node removePQ()
-{
-	uint currentSize = BufferOut[0].cost;
-
-		Node newTemp;
-		newTemp.id =0;
-		newTemp.cost = 0;
-	Node nodeReturn = newTemp;
-
-	if(currentSize >=1)
-	{
-		nodeReturn = BufferOut[1];
-
-		BufferOut[1] = BufferOut[currentSize];
-			
-		BufferOut[currentSize] = newTemp;
-
-		currentSize = currentSize -1;
-
-		BufferOut[0].cost = currentSize;
-
-		uint i = 1;
-
-		bool flag = false;
-		
-		if(currentSize >=1)
-		{
-			[allow_uav_condition]
-			while(true)
-			{
-				uint rightChild = (i*2)+1;
-				uint leftChild = i*2;
-				uint replaceId = 1;
-
-				if(rightChild >= currentSize)
-				{
-					if(leftChild >= currentSize)
-					{
-						break;
-					}
-					else
-						replaceId = leftChild;
-				}
-				else
-				{
-					if(BufferOut[leftChild].cost <= BufferOut[rightChild].cost)
-					{
-						replaceId = leftChild;
-					}
-					else
-					{
-						replaceId = rightChild;
-					}
-				}
-
-				if(BufferOut[i].cost > BufferOut[replaceId].cost)
-				{
-						Node temp ;
-						
-						temp = BufferOut[replaceId];
-
-						BufferOut[replaceId] = BufferOut[i]; 
-						BufferOut[i] = temp;
-						i = replaceId;
-				}
-				else{
-					break;
-				}
-				
-			}
-		}
-	}
-
-
-	return nodeReturn;
-
-}
+//void insertPQ(Node node){
+//
+//	uint currentSize = BufferOut[0].cost;
+//	uint i = currentSize+1;
+//
+//	[allow_uav_condition]
+//	while( i > 1 && BufferOut[i/2].cost > node.cost )
+//	{
+//		BufferOut[i] = BufferOut[i/2];
+//		i = i/2;
+//	}
+//
+//	BufferOut[i] = node;
+//	BufferOut[0].cost = BufferOut[0].cost + 1;
+//	//BufferOut[i] = node;
+//	
+//}
+//
+//Node removePQ()
+//{
+//	uint currentSize = BufferOut[0].cost;
+//
+//		Node newTemp;
+//		newTemp.id =0;
+//		newTemp.cost = 0;
+//	Node nodeReturn = newTemp;
+//
+//	if(currentSize >=1)
+//	{
+//		nodeReturn = BufferOut[1];
+//
+//		BufferOut[1] = BufferOut[currentSize];
+//			
+//		BufferOut[currentSize] = newTemp;
+//
+//		currentSize = currentSize -1;
+//
+//		BufferOut[0].cost = currentSize;
+//
+//		uint i = 1;
+//
+//		bool flag = false;
+//		
+//		if(currentSize >=1)
+//		{
+//			[allow_uav_condition]
+//			while(true)
+//			{
+//				uint rightChild = (i*2)+1;
+//				uint leftChild = i*2;
+//				uint replaceId = 1;
+//
+//				if(rightChild >= currentSize)
+//				{
+//					if(leftChild >= currentSize)
+//					{
+//						break;
+//					}
+//					else
+//						replaceId = leftChild;
+//				}
+//				else
+//				{
+//					if(BufferOut[leftChild].cost <= BufferOut[rightChild].cost)
+//					{
+//						replaceId = leftChild;
+//					}
+//					else
+//					{
+//						replaceId = rightChild;
+//					}
+//				}
+//
+//				if(BufferOut[i].cost > BufferOut[replaceId].cost)
+//				{
+//						Node temp ;
+//						
+//						temp = BufferOut[replaceId];
+//
+//						BufferOut[replaceId] = BufferOut[i]; 
+//						BufferOut[i] = temp;
+//						i = replaceId;
+//				}
+//				else{
+//					break;
+//				}
+//				
+//			}
+//		}
+//	}
+//
+//
+//	return nodeReturn;
+//
+//}
 
 [numthreads(1, 1, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
-	uint _GRID_RESOLUTION_X_AXIS = 8;
-	Agent agent = gAgentListInput[0];
 
-	Node nodeFirst;
-	nodeFirst.coords = agent.sourceLoc;
-
-	insertPQ(nodeFirst);
-
-	bool targetFound = false;
+	Node nodeTemp;
+	nodeTemp.coords = float2(100,200);
 	
-	while(!targetFound)
-	{
-		Node currentNode = removePQ();
+	gOpenListOut[0] = nodeTemp;
 
-		int current_x = Node.x;
-		int current_y = Node.y;
+	gOpenListOut[0].id = 12;
 
-		if(_GRID_RESOLUTION_X_AXIS > (current_x+1)) // To the immidiate right
-		{
+	gOpenListOut[0].cost = 1000;
 
-		}
+	gBufferOut[0].targetLoc = gOpenListOut[0].coords;
 
-		if(_GRID_RESOLUTION_X_AXIS > (current_x+1) && 0 <= (current_y-1)) // To the Right-Down
-		{
-				
-		}
+	gBufferOut[0].finalCost = gOpenListOut[0].cost;
 
-		if(0 <= (current_y-1)) // To Below/Down
-		{
+	//uint _GRID_RESOLUTION_X_AXIS = 8;
+	//Agent agent = gAgentListInput[0];
 
-		}
+	//Node nodeFirst;
+	//nodeFirst.coords = agent.sourceLoc;
 
-		if(0 <= (current_x-1) && 0 <= (current_y-1) ) //To Left-Down
-		{
+	//insertPQ(nodeFirst);
 
-		}
+	//bool targetFound = false;
+	//
+	//while(!targetFound)
+	//{
+	//	Node currentNode = removePQ();
 
-		if(0 <= (current_x-1)) //To Left
-		{
-		
-		}
+	//	int current_x = Node.x;
+	//	int current_y = Node.y;
 
-		if(0 <= (current_x-1) && _GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To Left-Up
-		{
+	//	if(_GRID_RESOLUTION_X_AXIS > (current_x+1)) // To the immidiate right
+	//	{
 
-		}
+	//	}
 
-		if(_GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To Up
-		{
+	//	if(_GRID_RESOLUTION_X_AXIS > (current_x+1) && 0 <= (current_y-1)) // To the Right-Down
+	//	{
+	//			
+	//	}
 
-		}
+	//	if(0 <= (current_y-1)) // To Below/Down
+	//	{
 
-		if(0 <= (current_x+1) && _GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To UP-RIGHT
-		{
+	//	}
 
-		}
-	}
+	//	if(0 <= (current_x-1) && 0 <= (current_y-1) ) //To Left-Down
+	//	{
+
+	//	}
+
+	//	if(0 <= (current_x-1)) //To Left
+	//	{
+	//	
+	//	}
+
+	//	if(0 <= (current_x-1) && _GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To Left-Up
+	//	{
+
+	//	}
+
+	//	if(_GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To Up
+	//	{
+
+	//	}
+
+	//	if(0 <= (current_x+1) && _GRID_RESOLUTION_Y_AXIS >(current_y+1) ) //To UP-RIGHT
+	//	{
+
+	//	}
+	//}
 
 }
 
