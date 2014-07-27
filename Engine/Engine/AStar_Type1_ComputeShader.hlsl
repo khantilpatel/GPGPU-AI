@@ -1,14 +1,12 @@
 
-#define _GRID_RESOLUTION_X_AXIS = 8;
 
-#define _NONE_UNREAD = 0;
-#define _NODE_OPEN = 1;
-#define _NODE_CLOSED = 2;
-#define _WALKABLE_NODE  = 0;
-#define _COLLISION_NODE = 1;
+
 
 void insertPQ(uint2 node);
-uint2 removePQ();
+uint3 removePQ();
+uint getGridIntegerCoordinate(uint x, uint y);
+void addToOpenList(uint2 thisNode, uint2 pqCurrentNode, uint2 targetNode, uint G_COST);
+void InsertIntoGridNodeList(uint x, uint y,  uint parentId, uint status  );
 
 struct BufType
 {
@@ -69,19 +67,41 @@ RWStructuredBuffer<uint3> gOpenListOut ;
 // x, y = 2D location on grid
 // z = ID of the pointer node
 // w = Status of Node Unread = 0; Open = 1; Closed = 2;
-RWStructuredBuffer<uint2> gGridNodeListOut ;
+RWStructuredBuffer<uint4> gGridNodeListOut ;
 
 // Final Result of A* for each Agent
 RWStructuredBuffer<SearchResult> gBufferOut : register(u0);
 //RWStructuredBuffer<ParentType> BufferOutClone : register(u1);
 //
 
+void insertPQ(uint3 node){
 
+	uint currentSize = gOpenListOut[0].y;
+	uint i = currentSize+1;
+
+	[allow_uav_condition]
+	while( i > 1 && gOpenListOut[i/2].y > node.y )
+	{
+		gOpenListOut[i] = gOpenListOut[i/2];
+		i = i/2;
+	}
+
+	gOpenListOut[i] = node;
+	gOpenListOut[0].y = gOpenListOut[0].y + 1;
+	//gOpenListOut[i] = node;
+
+}
+const int _GRID_RESOLUTION_X_AXIS = 8;
 [numthreads(1, 1, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
-
-
+	
+	
+	const int _NONE_UNREAD = 0;
+	const int _NODE_OPEN = 1;
+	const int _NODE_CLOSED = 2;
+	const int _WALKABLE_NODE  = 0;
+	const int _COLLISION_NODE = 1;
 	Agent agent = gAgentListInput[0];
 
 	// Get Source node to start the search with
@@ -90,17 +110,25 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
 	// Get Target node to check in the while loop if path found
 	uint2 targetNode;
-	targetNode = agent
+	targetNode = agent.targetLoc;
+	uint targetNodeGridId = getGridIntegerCoordinate(targetNode.x, targetNode.y);
 
-		InsertIntoGridNodeList(nodeFirstLoc.x, nodeFirstLoc.y, 0, _NODE_OPEN);
+	uint3 pqFirsNode;
+	pqFirsNode.x = getGridIntegerCoordinate(nodeFirstLoc.x,nodeFirstLoc.y);
+	pqFirsNode.y = 10;
+	pqFirsNode.z = 0;
 	// Insert the first node into OpenList;
-	insertPQ(nodeFirstLoc);
+	insertPQ(pqFirsNode);
+
+
+	// Insert into GridNodeList
+	InsertIntoGridNodeList(nodeFirstLoc.x, nodeFirstLoc.y, 0, _NODE_OPEN);
 
 	bool targetFound = false;
 
 	uint3 pqCurrentNode;
 	uint4 currentGridNode;
-	uint2 currentNode;
+	uint4 currentNode;
 	// Loop until path to target node found or no path found
 	while(!targetFound)
 	{
@@ -108,18 +136,24 @@ void main( uint3 DTid : SV_DispatchThreadID )
 		pqCurrentNode = removePQ();
 
 		//setStatusCloseGridNode(pqCurrentNode.x);
-		GridNodeList[pqCurrentNode.x].w == _NODE_CLOSED;	
+		gGridNodeListOut[pqCurrentNode.x].w = _NODE_CLOSED;	
 
-		uint4 currentNode = GridNodeList[pqCurrentNode.x];	
+		currentNode = gGridNodeListOut[pqCurrentNode.x];	
 
+		// terminate if no path found or pathfound
+		if(pqCurrentNode.y == 0 || pqCurrentNode.x == targetNodeGridId)
+		{
+			break;
+		}
+		else{
 			//currentGridNode = gGridNodeListOut[pqTopNode.x];		
 
-			if(_GRID_RESOLUTION_X_AXIS > (currentNode.x+1)) // To the immidiate right
+			if(_GRID_RESOLUTION_X_AXIS > currentNode.x+1) // To the immidiate right
 			{
 				
 				uint2 thisNode = uint2(currentNode.x+1,currentNode.y);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
+				addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
 
 			}
 
@@ -127,62 +161,73 @@ void main( uint3 DTid : SV_DispatchThreadID )
 			{
 				uint2 thisNode = uint2(currentNode.x+1,currentNode.y-1);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
 			}
 
 			if(0 <= (currentNode.y-1)) // To Below/Down
 			{
 				uint2 thisNode = uint2(currentNode.x,currentNode.y-1);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
 			}
 
 			if(0 <= (currentNode.x-1) && 0 <= (currentNode.y-1) ) //To Left-Down
 			{
 				uint2 thisNode = uint2(currentNode.x-1,currentNode.y-1);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
 			}
 
 			if(0 <= (currentNode.x-1)) //To Left
 			{
 				uint2 thisNode = uint2(currentNode.x-1,currentNode.y);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
 			}
 
-			if(0 <= (currentNode.x-1) && _GRID_RESOLUTION_Y_AXIS >(currentNode.y+1) ) //To Left-Up
+			if(0 <= (currentNode.x-1) && _GRID_RESOLUTION_X_AXIS >(currentNode.y+1) ) //To Left-Up
 			{
 				uint2 thisNode = uint2(currentNode.x-1,currentNode.y+1);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
 			}
 
-			if(_GRID_RESOLUTION_Y_AXIS >(currentNode.y+1) ) //To Up
+			if(_GRID_RESOLUTION_X_AXIS >(currentNode.y+1) ) //To Up
 			{
 				uint2 thisNode = uint2(currentNode.x,currentNode.y+1);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 10);
 			}
 
-			if(0 <= (currentNode.x+1) && _GRID_RESOLUTION_Y_AXIS >(currentNode.y+1) ) //To UP-RIGHT
+			if(0 <= (currentNode.x+1) && _GRID_RESOLUTION_X_AXIS >(currentNode.y+1) ) //To UP-RIGHT
 			{
 				uint2 thisNode = uint2(currentNode.x+1,currentNode.y+1);
 
-				void addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
+				 addToOpenList(thisNode,  pqCurrentNode,  targetNode, 14);
 			}
+		}
 	}
+
+	SearchResult result;
+	result.agentId = agent.id;
+	result.finalCost = pqCurrentNode.y;
+	result.targetLoc = uint2(currentNode.x,currentNode.y);
+
+	gBufferOut[0] = result; 
 
 }
 
 
-void addToOpenList(uint2 thisNode, uint4 pqCurrentNode, uint targetNode, uint G_COST)
+void addToOpenList(uint2 thisNode, uint3 pqCurrentNode, uint2 targetNode, uint G_COST)
 {
+		const int _COLLISION_NODE = 1;
+		const int _STATUS_UNREAD = 0;
+		const int _NODE_OPEN = 1;
 	// 1. check if status is _STATUS_UNREAD
-	if(m_map[thisNode.x][thisNode.y] != _COLLISION_NODE)
+	if(m_map[thisNode].z != _COLLISION_NODE)
 	{
-		thisGridNodeID = getGridIntegerCoordinate(thisNode.x,thisNode.y);
-		uint4 thisGridNode = GridNodeList[thisGridNodeID];
+		uint thisGridNodeID = getGridIntegerCoordinate(thisNode.x,thisNode.y);
+		uint4 thisGridNode = gGridNodeListOut[thisGridNodeID];
 
 			// 2. Check if not collision node on texture 2d
 			if( thisGridNode.w == _STATUS_UNREAD)
@@ -212,43 +257,26 @@ void addToOpenList(uint2 thisNode, uint4 pqCurrentNode, uint targetNode, uint G_
 void InsertIntoGridNodeList(uint x, uint y,  uint parentId, uint status  )
 {
 	uint gridId = getGridIntegerCoordinate(x, y);
-	GridNodeList[gridId] = uint4(x, y, parentId, status );
+	gGridNodeListOut[gridId] = uint4(x, y, parentId, status );
 }
 
-void setStatusCloseGridNode(uint gridId)
-{
-
-	if(GridNodeList[gridId].w == _NODE_OPEN) // TODO: We can remove this check  for performence
-	{
-		GridNodeList[gridId].w == _NODE_CLOSED;	
-	}
-
-
-}
+//void setStatusCloseGridNode(uint gridId)
+//{
+//
+//	if(GridNodeList[gridId].w == _NODE_OPEN) // TODO: We can remove this check  for performence
+//	{
+//		GridNodeList[gridId].w == _NODE_CLOSED;	
+//	}
+//
+//
+//}
 
 uint getGridIntegerCoordinate(uint x, uint y)
 {
 	uint gridId = _GRID_RESOLUTION_X_AXIS * y + x;
-	return gridId
+	return gridId;
 }
 
-void insertPQ(uint3 node){
-
-	uint currentSize = gOpenListOut[0].y;
-	uint i = currentSize+1;
-
-	[allow_uav_condition]
-	while( i > 1 && gOpenListOut[i/2].y > node.y )
-	{
-		gOpenListOut[i] = gOpenListOut[i/2];
-		i = i/2;
-	}
-
-	gOpenListOut[i] = node;
-	gOpenListOut[0].y = gOpenListOut[0].y + 1;
-	//gOpenListOut[i] = node;
-
-}
 
 uint3 removePQ()
 {
