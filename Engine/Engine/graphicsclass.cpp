@@ -11,6 +11,7 @@ GraphicsClass::GraphicsClass()
 	m_Model = 0;
 	m_ColorShader = 0;
 	m_MatrixMultiplyShaderClass = 0;
+	m_AStar_Type1_ShaderClass = 0;
 }
 
 
@@ -93,6 +94,16 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
+	m_AStar_Type1_ShaderClass = new AStar_Type1_ShaderClass;
+
+	result = m_AStar_Type1_ShaderClass->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd);
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the color shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+
 	return true;
 }
 
@@ -135,6 +146,13 @@ void GraphicsClass::Shutdown()
 		m_MatrixMultiplyShaderClass->Shutdown();
 		delete m_MatrixMultiplyShaderClass;
 		m_MatrixMultiplyShaderClass = 0;
+	}
+
+	if(m_AStar_Type1_ShaderClass)
+	{
+		m_AStar_Type1_ShaderClass->Shutdown();
+		delete m_AStar_Type1_ShaderClass;
+		m_AStar_Type1_ShaderClass = 0;
 	}
 
 	return;
@@ -184,7 +202,9 @@ bool GraphicsClass::Render()
 		return false;
 	}
 
-	m_MatrixMultiplyShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
+	//m_MatrixMultiplyShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
+
+	m_AStar_Type1_ShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
 	// Present the rendered scene to the screen.
 	m_D3D->EndScene();
 

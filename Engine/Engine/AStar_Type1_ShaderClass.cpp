@@ -1,40 +1,38 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: MatrixMultiplyShaderClass.cpp
 ////////////////////////////////////////////////////////////////////////////////
-#include "MatrixMultiplyShaderClass.h"
+#include "AStar_Type1_ShaderClass.h"
 
 
-MatrixMultiplyShaderClass::MatrixMultiplyShaderClass()
+AStar_Type1_ShaderClass::AStar_Type1_ShaderClass()
 {
 	m_computeshader_helper = 0;
 	m_computeShader = 0;
 
-	m_matrixBuffer_A = 0;
-	m_matrixBuffer_B = 0;
-	m_matrixBuffer_result = 0;
+	m_Buffer_AgentList = 0;
+	m_Buffer_SearchResult= 0;
 
-	m_BufMatA_SRV = 0;
-	m_BufMatB_SRV = 0;
-	m_BufResult_SRV = 0;
+	m_BufAgentList_SRV = 0;
+	m_BufSearchResult_SRV= 0;
 
 	m_computeshader_helper = new ComputeShaderHelperClass;
 }
 
-MatrixMultiplyShaderClass::MatrixMultiplyShaderClass(const MatrixMultiplyShaderClass& other)
+AStar_Type1_ShaderClass::AStar_Type1_ShaderClass(const AStar_Type1_ShaderClass& other)
 {
 }
 
-MatrixMultiplyShaderClass::~MatrixMultiplyShaderClass()
+AStar_Type1_ShaderClass::~AStar_Type1_ShaderClass()
 {
 }
 
-bool MatrixMultiplyShaderClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd)
+bool AStar_Type1_ShaderClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd)
 {
 	bool result;
 
 
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, deviceContext, hwnd, L"MatrixMultiplyComputeShader.hlsl");
+	result = InitializeShader(device, deviceContext, hwnd, L"AStar_Type1_ComputeShader.hlsl");
 	if(!result)
 	{
 		return false;
@@ -49,7 +47,7 @@ bool MatrixMultiplyShaderClass::Initialize(ID3D11Device* device, ID3D11DeviceCon
 // 2. Define Input layout for the vertex shader, vertex buffer data.
 // 3. Initiate the Constant shader variable buffer and texture buffers.
 ////////////////////////////////////////////////////////////////////
-bool MatrixMultiplyShaderClass::InitializeShader(ID3D11Device* device,ID3D11DeviceContext* deviceContext, HWND hwnd, WCHAR* csFilename)
+bool AStar_Type1_ShaderClass::InitializeShader(ID3D11Device* device,ID3D11DeviceContext* deviceContext, HWND hwnd, WCHAR* csFilename)
 {
 	HRESULT result;
 	ID3D10Blob* errorMessage;
@@ -126,7 +124,7 @@ bool MatrixMultiplyShaderClass::InitializeShader(ID3D11Device* device,ID3D11Devi
 	return true;
 }
 
-bool MatrixMultiplyShaderClass::createConstantBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+bool AStar_Type1_ShaderClass::createConstantBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
 
 	//for ( int i = 0; i < NUM_ELEMENTS; ++i ) 
@@ -145,16 +143,17 @@ bool MatrixMultiplyShaderClass::createConstantBuffer(ID3D11Device* device, ID3D1
 	a1.targetLoc = XMFLOAT2(6,4);
 	agentList[0] = a1 ;
 
-	int NUM_SEARCH_RESULTS = 20;
-	int NUM_AGENTS = 20;
-	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(Agent), NUM_AGENTS, &agentList, &m_matrixBuffer_A );
+	int NUM_AGENTS = 1;
+	int NUM_SEARCH_RESULTS = 10;
+
+	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(Agent), NUM_AGENTS, &agentList, &m_Buffer_AgentList );
 	//m_computeshader_helper->CreateStructuredBuffer( device, sizeof(BufType), NUM_ELEMENTS, &g_vBuf1[0], &m_matrixBuffer_B);
-	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_matrixBuffer_result );
+	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_Buffer_SearchResult );
 
 
-	m_computeshader_helper->CreateBufferSRV( device, m_matrixBuffer_A, &m_BufMatA_SRV );
+	m_computeshader_helper->CreateBufferSRV( device, m_Buffer_AgentList, &m_BufAgentList_SRV );
 	//m_computeshader_helper->CreateBufferSRV( device, m_matrixBuffer_B, &m_BufMatB_SRV );
-	m_computeshader_helper->CreateBufferUAV( device, m_matrixBuffer_result, &m_BufResult_SRV );
+	m_computeshader_helper->CreateBufferUAV( device, m_Buffer_SearchResult, &m_BufSearchResult_SRV );
 
 	TextureUtility* m_TextureUtility = new TextureUtility;
 
@@ -190,7 +189,7 @@ bool MatrixMultiplyShaderClass::createConstantBuffer(ID3D11Device* device, ID3D1
 }
 
 
-bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int vertexCount, int instanceCount,	
+bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int vertexCount, int instanceCount,	
 									   ID3D11Buffer* m_StreamOutBuffer, ID3D11ShaderResourceView* texture)
 {
 	bool result;
@@ -204,11 +203,11 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 	//{
 	//	return false;
 	//}
-	ID3D11ShaderResourceView* aRViews[2] = { m_BufMatA_SRV, m_WorldMap_SRV };
+	ID3D11ShaderResourceView* aRViews[2] = { m_BufAgentList_SRV, m_WorldMap_SRV };
 	// Now render the prepared buffers with the shader.
 	deviceContext->CSSetShader( m_computeShader, nullptr, 0 );
 	deviceContext->CSSetShaderResources( 0, 2, aRViews );
-	deviceContext->CSSetUnorderedAccessViews( 0, 1, &m_BufResult_SRV, nullptr );
+	deviceContext->CSSetUnorderedAccessViews( 0, 1, &m_BufSearchResult_SRV, nullptr );
 	//if ( pCBCS && pCSData )
 	//{
 	//    D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -233,7 +232,7 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 	ID3D11Buffer* ppCBnullptr[1] = { nullptr };
 	deviceContext->CSSetConstantBuffers( 0, 1, ppCBnullptr );
 
-	ID3D11Buffer* debugbuf = m_computeshader_helper->CreateAndCopyToDebugBuf( device, deviceContext, m_matrixBuffer_result );
+	ID3D11Buffer* debugbuf = m_computeshader_helper->CreateAndCopyToDebugBuf( device, deviceContext, m_Buffer_SearchResult );
 	D3D11_MAPPED_SUBRESOURCE MappedResource; 
 	SearchResult *p;
 	deviceContext->Map( debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource );
@@ -264,12 +263,12 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 		return true;
 }
 
-bool MatrixMultiplyShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,  ID3D11ShaderResourceView* texture)
+bool AStar_Type1_ShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,  ID3D11ShaderResourceView* texture)
 {
 	return true;
 }
 
-void MatrixMultiplyShaderClass::Shutdown()
+void AStar_Type1_ShaderClass::Shutdown()
 {
 	// Shutdown the vertex and pixel shaders as well as the related objects.
 	ShutdownShader();
@@ -277,25 +276,19 @@ void MatrixMultiplyShaderClass::Shutdown()
 	return;
 }
 
-void MatrixMultiplyShaderClass::ShutdownShader()
+void AStar_Type1_ShaderClass::ShutdownShader()
 {
 	// Release the sampler state.
-	if(m_matrixBuffer_A)
+	if(m_Buffer_AgentList)
 	{
-		m_matrixBuffer_A->Release();
-		m_matrixBuffer_A = 0;
+		m_Buffer_AgentList->Release();
+		m_Buffer_AgentList = 0;
 	}
 
-	if(m_matrixBuffer_B)
+	if(m_Buffer_SearchResult)
 	{
-		m_matrixBuffer_B->Release();
-		m_matrixBuffer_B = 0;
-	}
-
-	if(m_matrixBuffer_result)
-	{
-		m_matrixBuffer_result->Release();
-		m_matrixBuffer_result = 0;
+		m_Buffer_SearchResult->Release();
+		m_Buffer_SearchResult = 0;
 	}
 
 	// Release the layout.
@@ -306,24 +299,19 @@ void MatrixMultiplyShaderClass::ShutdownShader()
 	}
 
 	// Release the pixel shader.
-	if(m_BufMatA_SRV)
+	if(m_BufAgentList_SRV)
 	{
-		m_BufMatA_SRV->Release();
-		m_BufMatA_SRV = 0;
+		m_BufAgentList_SRV->Release();
+		m_BufAgentList_SRV = 0;
 	}
 
 	// Release the vertex shader.
-	if(m_BufMatB_SRV)
+	if(m_BufSearchResult_SRV)
 	{
-		m_BufMatB_SRV->Release();
-		m_BufMatB_SRV = 0;
+		m_BufSearchResult_SRV->Release();
+		m_BufSearchResult_SRV = 0;
 	}
 
-	if(m_BufResult_SRV)
-	{
-		m_BufResult_SRV->Release();
-		m_BufResult_SRV = 0;
-	}
 
 	return;
 }

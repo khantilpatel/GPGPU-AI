@@ -76,10 +76,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AStar_Type1_ShaderClass.cpp" />
     <ClCompile Include="cameraclass.cpp" />
     <ClCompile Include="colorshaderclass.cpp" />
     <ClCompile Include="ComputeShaderHelperClass.cpp" />
     <ClCompile Include="d3dclass.cpp" />
+    <ClCompile Include="GameWorld.cpp" />
     <ClCompile Include="graphicsclass.cpp" />
     <ClCompile Include="inputclass.cpp" />
     <ClCompile Include="main.cpp" />
@@ -90,10 +92,12 @@
     <ClCompile Include="TextureUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AStar_Type1_ShaderClass.h" />
     <ClInclude Include="cameraclass.h" />
     <ClInclude Include="colorshaderclass.h" />
     <ClInclude Include="ComputeShaderHelperClass.h" />
     <ClInclude Include="d3dclass.h" />
+    <ClInclude Include="GameWorld.h" />
     <ClInclude Include="graphicsclass.h" />
     <ClInclude Include="inputclass.h" />
     <ClInclude Include="MathUtility.h" />
@@ -107,6 +111,12 @@
     <None Include="color.vs" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="AStar_Type1_ComputeShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="MatrixMultiplyComputeShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>

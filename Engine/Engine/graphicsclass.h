@@ -13,7 +13,7 @@
 #include "modelclass.h"
 #include "colorshaderclass.h"
 #include "MatrixMultiplyShaderClass.h"
-
+#include "AStar_Type1_ShaderClass.h"
 /////////////
 // GLOBALS //
 /////////////
@@ -46,6 +46,7 @@ private:
 	ModelClass* m_Model;
 	ColorShaderClass* m_ColorShader;
 	MatrixMultiplyShaderClass* m_MatrixMultiplyShaderClass;
+	AStar_Type1_ShaderClass* m_AStar_Type1_ShaderClass;
 };
 
 #endif

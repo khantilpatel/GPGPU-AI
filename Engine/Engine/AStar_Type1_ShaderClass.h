@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: MatrixMultiplyShaderClass.h
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef _MatrixMultiplyShaderClass_H_
-#define _MatrixMultiplyShaderClass_H_
+#ifndef _AStar_Type1_ShaderClass_H_
+#define _AStar_Type1_ShaderClass_H_
 
 
 //////////////
@@ -21,7 +21,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: TextureShaderClass
 ////////////////////////////////////////////////////////////////////////////////
-class MatrixMultiplyShaderClass
+class AStar_Type1_ShaderClass
 {
 
 	struct VertexType
@@ -63,14 +63,14 @@ class MatrixMultiplyShaderClass
 		{
 			int agentId;
 			int finalCost;
-			D3DXVECTOR2 targetLoc;
+			XMFLOAT2 targetLoc;
 		};
 
 
 public:
-	MatrixMultiplyShaderClass();
-	MatrixMultiplyShaderClass(const MatrixMultiplyShaderClass&);
-	~MatrixMultiplyShaderClass();
+	AStar_Type1_ShaderClass();
+	AStar_Type1_ShaderClass(const AStar_Type1_ShaderClass&);
+	~AStar_Type1_ShaderClass();
 
 	bool Initialize(ID3D11Device*,ID3D11DeviceContext*, HWND);
 	void Shutdown();
@@ -91,20 +91,17 @@ private:
 
 	ID3D11ComputeShader* m_computeShader;
 	
-	ID3D11Buffer* m_matrixBuffer_A;
-	ID3D11Buffer* m_matrixBuffer_B;
-	ID3D11Buffer* m_matrixBuffer_result;
+	ID3D11Buffer* m_Buffer_AgentList;
+	ID3D11Buffer* m_Buffer_SearchResult;
 
-
-
-	ID3D11ShaderResourceView*   m_BufMatA_SRV ;
-	ID3D11ShaderResourceView*   m_BufMatB_SRV ;
+	ID3D11ShaderResourceView*   m_BufAgentList_SRV ;
 	ID3D11ShaderResourceView*	m_WorldMap_SRV;
+	ID3D11UnorderedAccessView*  m_BufSearchResult_SRV ;
+
 	ID3D11SamplerState* m_sampleState;
-	ID3D11UnorderedAccessView*  m_BufResult_SRV ;
 
 
-	BufType g_vBuf0[NUM_ELEMENTS];
-	BufType g_vBuf1[NUM_ELEMENTS];
+	//BufType g_vBuf0[NUM_ELEMENTS];
+	//BufType g_vBuf1[NUM_ELEMENTS];
 };
 #endif

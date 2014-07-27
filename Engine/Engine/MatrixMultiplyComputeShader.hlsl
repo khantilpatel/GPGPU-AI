@@ -56,101 +56,101 @@ RWStructuredBuffer<SearchResult> gBufferOut : register(u0);
 //RWStructuredBuffer<ParentType> BufferOutClone : register(u1);
 //
 
-//void insertPQ(Node node){
-//
-//	uint currentSize = BufferOut[0].cost;
-//	uint i = currentSize+1;
-//
-//	[allow_uav_condition]
-//	while( i > 1 && BufferOut[i/2].cost > node.cost )
-//	{
-//		BufferOut[i] = BufferOut[i/2];
-//		i = i/2;
-//	}
-//
-//	BufferOut[i] = node;
-//	BufferOut[0].cost = BufferOut[0].cost + 1;
-//	//BufferOut[i] = node;
-//	
-//}
-//
-//Node removePQ()
-//{
-//	uint currentSize = BufferOut[0].cost;
-//
-//		Node newTemp;
-//		newTemp.id =0;
-//		newTemp.cost = 0;
-//	Node nodeReturn = newTemp;
-//
-//	if(currentSize >=1)
-//	{
-//		nodeReturn = BufferOut[1];
-//
-//		BufferOut[1] = BufferOut[currentSize];
-//			
-//		BufferOut[currentSize] = newTemp;
-//
-//		currentSize = currentSize -1;
-//
-//		BufferOut[0].cost = currentSize;
-//
-//		uint i = 1;
-//
-//		bool flag = false;
-//		
-//		if(currentSize >=1)
-//		{
-//			[allow_uav_condition]
-//			while(true)
-//			{
-//				uint rightChild = (i*2)+1;
-//				uint leftChild = i*2;
-//				uint replaceId = 1;
-//
-//				if(rightChild >= currentSize)
-//				{
-//					if(leftChild >= currentSize)
-//					{
-//						break;
-//					}
-//					else
-//						replaceId = leftChild;
-//				}
-//				else
-//				{
-//					if(BufferOut[leftChild].cost <= BufferOut[rightChild].cost)
-//					{
-//						replaceId = leftChild;
-//					}
-//					else
-//					{
-//						replaceId = rightChild;
-//					}
-//				}
-//
-//				if(BufferOut[i].cost > BufferOut[replaceId].cost)
-//				{
-//						Node temp ;
-//						
-//						temp = BufferOut[replaceId];
-//
-//						BufferOut[replaceId] = BufferOut[i]; 
-//						BufferOut[i] = temp;
-//						i = replaceId;
-//				}
-//				else{
-//					break;
-//				}
-//				
-//			}
-//		}
-//	}
-//
-//
-//	return nodeReturn;
-//
-//}
+void insertPQ(Node node){
+
+	uint currentSize = gOpenListOut[0].cost;
+	uint i = currentSize+1;
+
+	[allow_uav_condition]
+	while( i > 1 && gOpenListOut[i/2].cost > node.cost )
+	{
+		gOpenListOut[i] = gOpenListOut[i/2];
+		i = i/2;
+	}
+
+	gOpenListOut[i] = node;
+	gOpenListOut[0].cost = gOpenListOut[0].cost + 1;
+	//gOpenListOut[i] = node;
+	
+}
+
+Node removePQ()
+{
+	uint currentSize = gOpenListOut[0].cost;
+
+		Node newTemp;
+		newTemp.id =0;
+		newTemp.cost = 0;
+	Node nodeReturn = newTemp;
+
+	if(currentSize >=1)
+	{
+		nodeReturn = gOpenListOut[1];
+
+		gOpenListOut[1] = gOpenListOut[currentSize];
+			
+		gOpenListOut[currentSize] = newTemp;
+
+		currentSize = currentSize -1;
+
+		gOpenListOut[0].cost = currentSize;
+
+		uint i = 1;
+
+		bool flag = false;
+		
+		if(currentSize >=1)
+		{
+			[allow_uav_condition]
+			while(true)
+			{
+				uint rightChild = (i*2)+1;
+				uint leftChild = i*2;
+				uint replaceId = 1;
+
+				if(rightChild >= currentSize)
+				{
+					if(leftChild >= currentSize)
+					{
+						break;
+					}
+					else
+						replaceId = leftChild;
+				}
+				else
+				{
+					if(gOpenListOut[leftChild].cost <= gOpenListOut[rightChild].cost)
+					{
+						replaceId = leftChild;
+					}
+					else
+					{
+						replaceId = rightChild;
+					}
+				}
+
+				if(gOpenListOut[i].cost > gOpenListOut[replaceId].cost)
+				{
+						Node temp ;
+						
+						temp = gOpenListOut[replaceId];
+
+						gOpenListOut[replaceId] = gOpenListOut[i]; 
+						gOpenListOut[i] = temp;
+						i = replaceId;
+				}
+				else{
+					break;
+				}
+				
+			}
+		}
+	}
+
+
+	return nodeReturn;
+
+}
 
 [numthreads(1, 1, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )

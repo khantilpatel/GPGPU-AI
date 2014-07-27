@@ -57,6 +57,12 @@
     <ClCompile Include="MathUtility.cpp">
       <Filter>class-utility</Filter>
     </ClCompile>
+    <ClCompile Include="GameWorld.cpp">
+      <Filter>class-utility</Filter>
+    </ClCompile>
+    <ClCompile Include="AStar_Type1_ShaderClass.cpp">
+      <Filter>class-shaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cameraclass.h">
@@ -92,6 +98,12 @@
     <ClInclude Include="MathUtility.h">
       <Filter>class-utility</Filter>
     </ClInclude>
+    <ClInclude Include="GameWorld.h">
+      <Filter>class-utility</Filter>
+    </ClInclude>
+    <ClInclude Include="AStar_Type1_ShaderClass.h">
+      <Filter>class-shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="color.ps">
@@ -103,6 +115,9 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="MatrixMultiplyComputeShader.hlsl">
+      <Filter>Shader Files</Filter>
+    </FxCompile>
+    <FxCompile Include="AStar_Type1_ComputeShader.hlsl">
       <Filter>Shader Files</Filter>
     </FxCompile>
   </ItemGroup>
