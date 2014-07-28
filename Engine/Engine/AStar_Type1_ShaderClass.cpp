@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "AStar_Type1_ShaderClass.h"
 
-
 AStar_Type1_ShaderClass::AStar_Type1_ShaderClass()
 {
 	m_computeshader_helper = 0;
@@ -11,10 +10,13 @@ AStar_Type1_ShaderClass::AStar_Type1_ShaderClass()
 
 	m_Buffer_AgentList = 0;
 	m_Buffer_SearchResult= 0;
+	m_Buffer_OpenList = 0;
+	m_Buffer_GridNodeListOut = 0;
 
 	m_BufAgentList_SRV = 0;
-	m_BufSearchResult_SRV= 0;
-
+	m_BufSearchResult_URV= 0;
+	m_BufGridNodeListOut_URV = 0;
+	m_BufOpenList_URV = 0;
 	m_computeshader_helper = new ComputeShaderHelperClass;
 }
 
@@ -58,7 +60,7 @@ bool AStar_Type1_ShaderClass::InitializeShader(ID3D11Device* device,ID3D11Device
 	computeShaderBuffer = 0;
 
 	// Compile the vertex shader code.
-	result = D3DX11CompileFromFile(csFilename, NULL, NULL, "main", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL, 
+	result = D3DX11CompileFromFile(csFilename, NULL, NULL, "main", "cs_5_0", D3D10_SHADER_DEBUG | D3D10_SHADER_SKIP_OPTIMIZATION, 0, NULL, 
 		&computeShaderBuffer, &errorMessage, NULL);
 	if(FAILED(result))
 	{
@@ -138,23 +140,34 @@ bool AStar_Type1_ShaderClass::createConstantBuffer(ID3D11Device* device, ID3D11D
 
 	Agent a1;
 
+	int2 i;
+	i.x1 = 0;
+	i.y1 = 4;
+
+	int2 i1;
+	i1.x1 = 6;
+	i1.y1 = 4;
+
 	a1.id =1 ;
-	a1.sourceLoc = XMFLOAT2(1,4);
-	a1.targetLoc = XMFLOAT2(6,4);
+	a1.sourceLoc = i;
+	a1.targetLoc = i1;
 	agentList[0] = a1 ;
 
 	int NUM_AGENTS = 1;
 	int NUM_SEARCH_RESULTS = 10;
+	int NUM_OPENLIST_COUNT = 64;
+	//for (int)
 
 	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(Agent), NUM_AGENTS, &agentList, &m_Buffer_AgentList );
-	//m_computeshader_helper->CreateStructuredBuffer( device, sizeof(BufType), NUM_ELEMENTS, &g_vBuf1[0], &m_matrixBuffer_B);
-	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_Buffer_SearchResult );
+	//m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int3), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_OpenList);
+	//m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int4), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_GridNodeListOut);
+	//m_computeshader_helper->CreateStructuredBuffer(device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_Buffer_SearchResult);
 
 
 	m_computeshader_helper->CreateBufferSRV( device, m_Buffer_AgentList, &m_BufAgentList_SRV );
-	//m_computeshader_helper->CreateBufferSRV( device, m_matrixBuffer_B, &m_BufMatB_SRV );
-	m_computeshader_helper->CreateBufferUAV( device, m_Buffer_SearchResult, &m_BufSearchResult_SRV );
-
+	//m_computeshader_helper->CreateBufferUAV(device, m_Buffer_OpenList, &m_BufOpenList_URV);
+	//m_computeshader_helper->CreateBufferUAV(device, m_Buffer_GridNodeListOut, &m_BufGridNodeListOut_URV);
+	//m_computeshader_helper->CreateBufferUAV(device, m_Buffer_SearchResult, &m_BufSearchResult_URV);
 	TextureUtility* m_TextureUtility = new TextureUtility;
 
 	m_WorldMap_SRV = m_TextureUtility->CreateRandomTexture2DSRV_New(device,deviceContext);//,deviceContext);
@@ -189,13 +202,13 @@ bool AStar_Type1_ShaderClass::createConstantBuffer(ID3D11Device* device, ID3D11D
 }
 
 
-bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int vertexCount, int instanceCount,	
-									   ID3D11Buffer* m_StreamOutBuffer, ID3D11ShaderResourceView* texture)
+bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int vertexCount, int instanceCount,
+	ID3D11Buffer* m_StreamOutBuffer, ID3D11ShaderResourceView* texture)
 {
 	bool result;
-	UINT X =1;
-	UINT Y =1;
-	UINT Z =1;
+	UINT X = 1;
+	UINT Y = 1;
+	UINT Z = 1;
 
 	// Set the shader parameters that it will use for rendering.
 	//result = SetShaderParameters(deviceContext, texture);
@@ -203,11 +216,24 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	//{
 	//	return false;
 	//}
+	int NUM_SEARCH_RESULTS = 10;
+	int NUM_OPENLIST_COUNT = 64;
+
+	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int3), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_OpenList);
+	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int4), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_GridNodeListOut);
+	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_Buffer_SearchResult);
+
+	m_computeshader_helper->CreateBufferUAV(device, m_Buffer_OpenList, &m_BufOpenList_URV);
+	m_computeshader_helper->CreateBufferUAV(device, m_Buffer_GridNodeListOut, &m_BufGridNodeListOut_URV);
+	m_computeshader_helper->CreateBufferUAV(device, m_Buffer_SearchResult, &m_BufSearchResult_URV);
+
 	ID3D11ShaderResourceView* aRViews[2] = { m_BufAgentList_SRV, m_WorldMap_SRV };
+
+	ID3D11UnorderedAccessView* aURViews[3] = { m_BufOpenList_URV, m_BufSearchResult_URV, m_BufGridNodeListOut_URV };
 	// Now render the prepared buffers with the shader.
-	deviceContext->CSSetShader( m_computeShader, nullptr, 0 );
-	deviceContext->CSSetShaderResources( 0, 2, aRViews );
-	deviceContext->CSSetUnorderedAccessViews( 0, 1, &m_BufSearchResult_SRV, nullptr );
+	deviceContext->CSSetShader(m_computeShader, nullptr, 0);
+	deviceContext->CSSetShaderResources(0, 2, aRViews);
+	deviceContext->CSSetUnorderedAccessViews(0, 3, aURViews, nullptr);//3, aURViews, nullptr);
 	//if ( pCBCS && pCSData )
 	//{
 	//    D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -219,47 +245,90 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	//}
 	
 	//deviceContext->CSSetSamplers(0,1, &m_sampleState);
+	//time_t start, end;
+	//time(&start);
 	deviceContext->Dispatch( X, Y, Z );
-
+	//time(&end);
+//	double dif = difftime(end, start);
+	//printf("Elasped time is %.2lf seconds.", dif);
 	deviceContext->CSSetShader( nullptr, nullptr, 0 );
 
-	ID3D11UnorderedAccessView* ppUAViewnullptr[1] = { nullptr };
-	deviceContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewnullptr, nullptr );
+	ID3D11UnorderedAccessView* ppUAViewnullptr[3] = { nullptr, nullptr, nullptr };
+	deviceContext->CSSetUnorderedAccessViews( 0, 3, ppUAViewnullptr, nullptr );
 
-	ID3D11ShaderResourceView* ppSRVnullptr[2] = { nullptr, nullptr };
-	deviceContext->CSSetShaderResources( 0, 2, ppSRVnullptr );
+	ID3D11ShaderResourceView* ppSRVnullptr[1] = { nullptr};
+	deviceContext->CSSetShaderResources( 0, 1, ppSRVnullptr );
 
 	ID3D11Buffer* ppCBnullptr[1] = { nullptr };
 	deviceContext->CSSetConstantBuffers( 0, 1, ppCBnullptr );
 
-	ID3D11Buffer* debugbuf = m_computeshader_helper->CreateAndCopyToDebugBuf( device, deviceContext, m_Buffer_SearchResult );
-	D3D11_MAPPED_SUBRESOURCE MappedResource; 
-	SearchResult *p;
-	deviceContext->Map( debugbuf, 0, D3D11_MAP_READ, 0, &MappedResource );
+	/////////////////////////////////////////////////////////////////////
+	ID3D11Buffer* debugbuf1 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_OpenList);
+	D3D11_MAPPED_SUBRESOURCE MappedResource1;
+	int3 *p1;
+	deviceContext->Map(debugbuf1, 0, D3D11_MAP_READ, 0, &MappedResource1);
 
 	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
 	// This is also a common trick to debug CS programs.
-	p = (SearchResult*)MappedResource.pData;
+	p1 = (int3*)MappedResource1.pData;
 
-	SearchResult nodes[20];
-	for (int i = 0; i <=20; i++)
+	int3 nodes1[64];
+	for (int i = 0; i <= 63; i++)
 
 	{
-		nodes[i] = p[i];		
+		nodes1[i] = p1[i];
 	}
+	deviceContext->Unmap(debugbuf1, 0);
+
+	debugbuf1->Release();
+	debugbuf1 = 0;
+	///////////////////////////////////////////////////////////////////////////
+	ID3D11Buffer* debugbuf2 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_GridNodeListOut);
+	D3D11_MAPPED_SUBRESOURCE MappedResource2;
+	int4 *p2;
+	deviceContext->Map(debugbuf2, 0, D3D11_MAP_READ, 0, &MappedResource2);
+
+	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
+	// This is also a common trick to debug CS programs.
+	p2 = (int4*)MappedResource2.pData;
+
+	int4 nodes2[64];
+	for (int i = 0; i <= 63; i++)
+
+	{
+		nodes2[i] = p2[i];
+	}
+	deviceContext->Unmap(debugbuf2, 0);
+
+	debugbuf2->Release();
+	debugbuf2 = 0;
+	///////////////////////////////////////////////////////////////////////
+	ID3D11Buffer* debugbuf3 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_SearchResult);
+	D3D11_MAPPED_SUBRESOURCE MappedResource3;
+	SearchResult *p3;
+	deviceContext->Map(debugbuf3, 0, D3D11_MAP_READ, 0, &MappedResource3);
+
+	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
+	// This is also a common trick to debug CS programs.
+	p3 = (SearchResult*)MappedResource3.pData;
+
+	SearchResult nodes3[10];
+	for (int i = 0; i <= 5; i++)
+
+	{
+		nodes3[i] = p3[i];
+	}
+	deviceContext->Unmap(debugbuf3, 0);
+
+	debugbuf3->Release();
+	debugbuf3 = 0;
+	/////////////////////////////////////////////////////////////////
+
 
 //	 Verify that if Compute Shader has done right
 	printf( "Verifying against CPU result..." );
-	//bool bSuccess = true;
-	//for ( int i = 0; i < NUM_ELEMENTS; ++i )
-	//{
-	//	//std::cout<< p[i].f;
-	//}
 
-	//	deviceContext->Unmap( debugbuf, 0 );
-
-	//	debugbuf->Release();
-	//	debugbuf = 0;
+	 
 		return true;
 }
 
@@ -284,6 +353,17 @@ void AStar_Type1_ShaderClass::ShutdownShader()
 		m_Buffer_AgentList->Release();
 		m_Buffer_AgentList = 0;
 	}
+	if (m_Buffer_GridNodeListOut)
+	{
+		m_Buffer_GridNodeListOut->Release();
+		m_Buffer_GridNodeListOut = 0;
+	}
+
+	if (m_Buffer_OpenList)
+	{
+		m_Buffer_OpenList->Release();
+		m_Buffer_OpenList = 0;
+	}
 
 	if(m_Buffer_SearchResult)
 	{
@@ -306,12 +386,22 @@ void AStar_Type1_ShaderClass::ShutdownShader()
 	}
 
 	// Release the vertex shader.
-	if(m_BufSearchResult_SRV)
+	if(m_BufSearchResult_URV)
 	{
-		m_BufSearchResult_SRV->Release();
-		m_BufSearchResult_SRV = 0;
+		m_BufSearchResult_URV->Release();
+		m_BufSearchResult_URV = 0;
 	}
 
 
+	if (m_BufGridNodeListOut_URV)
+	{
+		m_BufGridNodeListOut_URV->Release();
+		m_BufGridNodeListOut_URV = 0;
+	}
+	if (m_BufOpenList_URV)
+	{
+		m_BufOpenList_URV->Release();
+		m_BufOpenList_URV = 0;
+	}
 	return;
 }

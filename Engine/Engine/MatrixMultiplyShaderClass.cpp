@@ -242,8 +242,8 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 	// This is also a common trick to debug CS programs.
 	p = (SearchResult*)MappedResource.pData;
 
-	SearchResult nodes[20];
-	for (int i = 0; i <=20; i++)
+	SearchResult nodes[5];
+	for (int i = 0; i <=1; i++)
 
 	{
 		nodes[i] = p[i];		
@@ -257,10 +257,10 @@ bool MatrixMultiplyShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext
 	//	//std::cout<< p[i].f;
 	//}
 
-	//	deviceContext->Unmap( debugbuf, 0 );
+		deviceContext->Unmap( debugbuf, 0 );
 
-	//	debugbuf->Release();
-	//	debugbuf = 0;
+		debugbuf->Release();
+		debugbuf = 0;
 		return true;
 }
 

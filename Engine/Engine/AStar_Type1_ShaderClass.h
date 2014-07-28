@@ -51,20 +51,40 @@ class AStar_Type1_ShaderClass
 		//	int cost;
 		//	int id;
 		//};
+		struct int2
+		{
+			int x1;
+			int y1;
+		};
+
+		struct int3
+		{
+			int x;
+			int y;
+			int z;
+		};
+		struct int4
+		{
+			int x;
+			int y;
+			int z;
+			int w;
+		};
 
 		struct Agent
 		{
 			int id;
-			XMFLOAT2 sourceLoc;
-			XMFLOAT2 targetLoc;
+			int2 sourceLoc;
+			int2 targetLoc;
 		};
 
 		struct SearchResult
 		{
 			int agentId;
 			int finalCost;
-			XMFLOAT2 targetLoc;
+			int2 targetLoc;
 		};
+
 
 
 public:
@@ -92,11 +112,17 @@ private:
 	ID3D11ComputeShader* m_computeShader;
 	
 	ID3D11Buffer* m_Buffer_AgentList;
+	ID3D11Buffer* m_Buffer_OpenList;
 	ID3D11Buffer* m_Buffer_SearchResult;
+	ID3D11Buffer* m_Buffer_GridNodeListOut;
 
 	ID3D11ShaderResourceView*   m_BufAgentList_SRV ;
 	ID3D11ShaderResourceView*	m_WorldMap_SRV;
-	ID3D11UnorderedAccessView*  m_BufSearchResult_SRV ;
+
+	ID3D11UnorderedAccessView*  m_BufOpenList_URV;
+	ID3D11UnorderedAccessView*  m_BufGridNodeListOut_URV;
+	ID3D11UnorderedAccessView*  m_BufSearchResult_URV ;
+	
 
 	ID3D11SamplerState* m_sampleState;
 

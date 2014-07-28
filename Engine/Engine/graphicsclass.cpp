@@ -175,7 +175,7 @@ bool GraphicsClass::Frame()
 }
 
 
-bool GraphicsClass::Render()
+bool GraphicsClass::Render()	
 {
 	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	bool result;
@@ -195,6 +195,8 @@ bool GraphicsClass::Render()
 	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	m_Model->Render(m_D3D->GetDeviceContext());
 
+	m_AStar_Type1_ShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
+
 	// Render the model using the color shader.
 	result = m_ColorShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix);
 	if(!result)
@@ -204,7 +206,7 @@ bool GraphicsClass::Render()
 
 	//m_MatrixMultiplyShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
 
-	m_AStar_Type1_ShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
+	
 	// Present the rendered scene to the screen.
 	m_D3D->EndScene();
 
