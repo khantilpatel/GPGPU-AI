@@ -2,6 +2,7 @@
 // Filename: MatrixMultiplyShaderClass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "AStar_Type1_ShaderClass.h"
+#include "AStar_Type1_ComputeShaderCompiled.h"
 
 AStar_Type1_ShaderClass::AStar_Type1_ShaderClass()
 {
@@ -18,6 +19,7 @@ AStar_Type1_ShaderClass::AStar_Type1_ShaderClass()
 	m_BufGridNodeListOut_URV = 0;
 	m_BufOpenList_URV = 0;
 	m_computeshader_helper = new ComputeShaderHelperClass;
+
 }
 
 AStar_Type1_ShaderClass::AStar_Type1_ShaderClass(const AStar_Type1_ShaderClass& other)
@@ -60,16 +62,33 @@ bool AStar_Type1_ShaderClass::InitializeShader(ID3D11Device* device,ID3D11Device
 	computeShaderBuffer = 0;
 
 	// Compile the vertex shader code.
-	result = D3DX11CompileFromFile(csFilename, NULL, NULL, "main", "cs_5_0", D3D10_SHADER_DEBUG | D3D10_SHADER_SKIP_OPTIMIZATION, 0, NULL, 
-		&computeShaderBuffer, &errorMessage, NULL);
+	//result = D3DX11CompileFromFile(csFilename, NULL, NULL, "main", "cs_5_0", D3D10_SHADER_DEBUG | D3D10_SHADER_SKIP_OPTIMIZATION, 0, NULL, 
+	//	&computeShaderBuffer, &errorMessage, NULL);
+
+
+
+
+
+
+
+	// Create the vertex shader from the buffer.
+	//result = device->CreateComputeShader(computeShaderBuffer->GetBufferPointer(), computeShaderBuffer->GetBufferSize(),
+	//	NULL, &m_computeShader);
+
+	result = device->CreateComputeShader(g_csshader, sizeof(g_csshader), nullptr, &m_computeShader);
 	if(FAILED(result))
 	{
-		// If the shader failed to compile it should have writen something to the error message.
-		if(errorMessage)
-		{
-		//	OutputShaderErrorMessage(errorMessage, hwnd, csFilename);
+		return false;
+	}
 
-					char* compileErrors;
+	if (FAILED(result))
+	{
+		// If the shader failed to compile it should have writen something to the error message.
+		if (errorMessage)
+		{
+			//	OutputShaderErrorMessage(errorMessage, hwnd, csFilename);
+
+			char* compileErrors;
 			unsigned long bufferSize, i;
 			ofstream fout;
 
@@ -84,7 +103,7 @@ bool AStar_Type1_ShaderClass::InitializeShader(ID3D11Device* device,ID3D11Device
 			fout.open("shader-error.txt");
 
 			// Write out the error message.
-			for(i=0; i<bufferSize; i++)
+			for (i = 0; i<bufferSize; i++)
 			{
 				fout << compileErrors[i];
 			}
@@ -103,18 +122,8 @@ bool AStar_Type1_ShaderClass::InitializeShader(ID3D11Device* device,ID3D11Device
 		}
 		return false;
 	}
-
-	// Create the vertex shader from the buffer.
-	result = device->CreateComputeShader(computeShaderBuffer->GetBufferPointer(), computeShaderBuffer->GetBufferSize(),
-		NULL, &m_computeShader);
-	if(FAILED(result))
-	{
-		return false;
-	}
-
 	// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
-	computeShaderBuffer->Release();
-	computeShaderBuffer = 0;
+
 
 
 	result = createConstantBuffer(device, deviceContext );
@@ -136,7 +145,9 @@ bool AStar_Type1_ShaderClass::createConstantBuffer(ID3D11Device* device, ID3D11D
 
 	//	g_vBuf1[i].f = (float)i;
 	//}
-	Agent agentList[1];
+
+	const int NUM_AGENTS = 4096;
+	Agent agentList[NUM_AGENTS];
 
 	Agent a1;
 
@@ -148,14 +159,20 @@ bool AStar_Type1_ShaderClass::createConstantBuffer(ID3D11Device* device, ID3D11D
 	i1.x1 = 6;
 	i1.y1 = 4;
 
-	a1.id =1 ;
+	
 	a1.sourceLoc = i;
 	a1.targetLoc = i1;
-	agentList[0] = a1 ;
 
-	int NUM_AGENTS = 1;
-	int NUM_SEARCH_RESULTS = 10;
-	int NUM_OPENLIST_COUNT = 64;
+	
+	for (int i = 0; i < NUM_AGENTS; i++)
+	{
+		a1.id = i;
+		agentList[i] = a1;
+	}
+
+
+	
+
 	//for (int)
 
 	m_computeshader_helper->CreateStructuredBuffer( device, sizeof(Agent), NUM_AGENTS, &agentList, &m_Buffer_AgentList );
@@ -206,8 +223,8 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	ID3D11Buffer* m_StreamOutBuffer, ID3D11ShaderResourceView* texture)
 {
 	bool result;
-	UINT X = 1;
-	UINT Y = 1;
+	UINT X = 2;
+	UINT Y = 2;
 	UINT Z = 1;
 
 	// Set the shader parameters that it will use for rendering.
@@ -216,11 +233,11 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	//{
 	//	return false;
 	//}
-	int NUM_SEARCH_RESULTS = 10;
-	int NUM_OPENLIST_COUNT = 64;
+	const int NUM_SEARCH_RESULTS = 4096;
+	const int NUM_OPENLIST_COUNT = 4096 * 64;
 
-	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int3), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_OpenList);
-	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int4), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_GridNodeListOut);
+	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_OpenList);
+	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int6), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_GridNodeListOut);
 	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_Buffer_SearchResult);
 
 	m_computeshader_helper->CreateBufferUAV(device, m_Buffer_OpenList, &m_BufOpenList_URV);
@@ -247,7 +264,7 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	//deviceContext->CSSetSamplers(0,1, &m_sampleState);
 	//time_t start, end;
 	//time(&start);
-	deviceContext->Dispatch( X, Y, Z );
+	deviceContext->Dispatch( 1, 1, 1 );
 	//time(&end);
 //	double dif = difftime(end, start);
 	//printf("Elasped time is %.2lf seconds.", dif);
@@ -263,46 +280,46 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	deviceContext->CSSetConstantBuffers( 0, 1, ppCBnullptr );
 
 	/////////////////////////////////////////////////////////////////////
-	ID3D11Buffer* debugbuf1 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_OpenList);
-	D3D11_MAPPED_SUBRESOURCE MappedResource1;
-	int3 *p1;
-	deviceContext->Map(debugbuf1, 0, D3D11_MAP_READ, 0, &MappedResource1);
+	//ID3D11Buffer* debugbuf1 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_OpenList);
+	//D3D11_MAPPED_SUBRESOURCE MappedResource1;
+	//int *p1;
+	//deviceContext->Map(debugbuf1, 0, D3D11_MAP_READ, 0, &MappedResource1);
 
-	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
-	// This is also a common trick to debug CS programs.
-	p1 = (int3*)MappedResource1.pData;
+	//// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
+	//// This is also a common trick to debug CS programs.
+	//p1 = (int*)MappedResource1.pData;
 
-	int3 nodes1[64];
-	for (int i = 0; i <= 63; i++)
+	//int nodes1[NUM_OPENLIST_COUNT];
+	//for (int i = 0; i < NUM_OPENLIST_COUNT; i++)
 
-	{
-		nodes1[i] = p1[i];
-	}
-	deviceContext->Unmap(debugbuf1, 0);
+	//{
+	//	nodes1[i] = p1[i];
+	//}
+	//deviceContext->Unmap(debugbuf1, 0);
 
-	debugbuf1->Release();
-	debugbuf1 = 0;
-	///////////////////////////////////////////////////////////////////////////
-	ID3D11Buffer* debugbuf2 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_GridNodeListOut);
-	D3D11_MAPPED_SUBRESOURCE MappedResource2;
-	int4 *p2;
-	deviceContext->Map(debugbuf2, 0, D3D11_MAP_READ, 0, &MappedResource2);
+	//debugbuf1->Release();
+	//debugbuf1 = 0;
+	/////////////////////////////////////////////////////////////////////////////
+	//ID3D11Buffer* debugbuf2 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_GridNodeListOut);
+	//D3D11_MAPPED_SUBRESOURCE MappedResource2;
+	//int6 *p2;
+	//deviceContext->Map(debugbuf2, 0, D3D11_MAP_READ, 0, &MappedResource2);
 
-	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
-	// This is also a common trick to debug CS programs.
-	p2 = (int4*)MappedResource2.pData;
+	//// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
+	//// This is also a common trick to debug CS programs.
+	//p2 = (int6*)MappedResource2.pData;
 
-	int4 nodes2[64];
-	for (int i = 0; i <= 63; i++)
+	//int6 nodes2[NUM_OPENLIST_COUNT];
+	//for (int i = 0; i < NUM_OPENLIST_COUNT; i++)
 
-	{
-		nodes2[i] = p2[i];
-	}
-	deviceContext->Unmap(debugbuf2, 0);
+	//{
+	//	nodes2[i] = p2[i];
+	//}
+	//deviceContext->Unmap(debugbuf2, 0);
 
-	debugbuf2->Release();
-	debugbuf2 = 0;
-	///////////////////////////////////////////////////////////////////////
+	//debugbuf2->Release();
+	//debugbuf2 = 0;
+	/////////////////////////////////////////////////////////////////////////
 	ID3D11Buffer* debugbuf3 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_SearchResult);
 	D3D11_MAPPED_SUBRESOURCE MappedResource3;
 	SearchResult *p3;
@@ -312,8 +329,8 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	// This is also a common trick to debug CS programs.
 	p3 = (SearchResult*)MappedResource3.pData;
 
-	SearchResult nodes3[10];
-	for (int i = 0; i <= 5; i++)
+	SearchResult nodes3[NUM_SEARCH_RESULTS];
+	for (int i = 0; i < NUM_SEARCH_RESULTS; i++)
 
 	{
 		nodes3[i] = p3[i];
@@ -322,7 +339,7 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 
 	debugbuf3->Release();
 	debugbuf3 = 0;
-	/////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////
 
 
 //	 Verify that if Compute Shader has done right

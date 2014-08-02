@@ -71,6 +71,17 @@ class AStar_Type1_ShaderClass
 			int w;
 		};
 
+		struct int6
+		{
+			int x;
+			int y;
+			int z; //cost
+			int w; // G_cost
+			int u;// parent_id;
+			int v; //status
+			int n;
+		};
+
 		struct Agent
 		{
 			int id;

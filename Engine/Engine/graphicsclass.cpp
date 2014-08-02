@@ -204,6 +204,7 @@ bool GraphicsClass::Render()
 		return false;
 	}
 
+	//m_AStar_Type1_ShaderClass->Render(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), 0, 0, NULL, NULL);
 	//m_MatrixMultiplyShaderClass->Render(m_D3D->GetDevice(),m_D3D->GetDeviceContext(),0,0,NULL,NULL);
 
 	
