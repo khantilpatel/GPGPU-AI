@@ -264,7 +264,7 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	//deviceContext->CSSetSamplers(0,1, &m_sampleState);
 	//time_t start, end;
 	//time(&start);
-	deviceContext->Dispatch( 1, 1, 1 );
+	deviceContext->Dispatch( 2, 2, 1 );
 	//time(&end);
 //	double dif = difftime(end, start);
 	//printf("Elasped time is %.2lf seconds.", dif);
@@ -331,16 +331,16 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 
 	SearchResult nodes3[NUM_SEARCH_RESULTS];
 	for (int i = 0; i < NUM_SEARCH_RESULTS; i++)
-
 	{
 		nodes3[i] = p3[i];
 	}
+
 	deviceContext->Unmap(debugbuf3, 0);
 
 	debugbuf3->Release();
 	debugbuf3 = 0;
-	///////////////////////////////////////////////////////////////////
 
+	///////////////////////////////////////////////////////////////////
 
 //	 Verify that if Compute Shader has done right
 	printf( "Verifying against CPU result..." );

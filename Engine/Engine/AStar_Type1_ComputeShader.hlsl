@@ -10,8 +10,11 @@
 #define NUM_THREAD_X 32
 #define NUM_THREAD_Y 32
 
-#define NUM_THREADS_PER_BLOCK (NUM_THREAD_X*NUM_THREAD_Y)
+#define NUM_THREAD_ON_GRID_X (NUM_THREAD_X * NUM_THREAD_GROUP_X)
+#define NUM_THREAD_ON_GRID_Y (NUM_THREAD_Y * NUM_THREAD_GROUP_Y)
 
+#define NUM_THREADS_PER_BLOCK (NUM_THREAD_X*NUM_THREAD_Y)
+#define STRIDE_GRID_ACCESS ( NUM_THREADS_PER_BLOCK*NUM_NODES_PER_THREAD )
 struct BufType
 {
 	uint f;
@@ -95,12 +98,13 @@ RWStructuredBuffer<SearchResult> gBufferOut : register(u1);
 uint getGridOffset(uint dispatch_x, uint dispatch_y)
 {
 	uint gridId = NUM_THREAD_GROUP_X * dispatch_y + dispatch_x;
-	return  gridId * NUM_THREADS_PER_BLOCK;
+	return  gridId * STRIDE_GRID_ACCESS;
 }
 
 uint getThreadOffset(uint dispatch_x, uint dispatch_y)
 {
-	uint gridId = NUM_THREAD_X * dispatch_y + dispatch_x;
+	//uint gridId = NUM_THREAD_X * dispatch_y + dispatch_x;
+	uint gridId = NUM_THREAD_ON_GRID_X * dispatch_y + dispatch_x;
 	return  gridId * NUM_NODES_PER_THREAD;
 	
 }
@@ -335,15 +339,13 @@ void addToOpenList(uint offset, uint2 thisNode, uint5 parentGridNodeObject, uint
 	}
 }
 
-
-
-
-[numthreads(1, 1, 1)]
+[numthreads(NUM_THREAD_X, NUM_THREAD_Y, 1)] //NUM_THREAD_X
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid :SV_GroupID)
 {
-	uint grid_offset = getGridOffset(1, 1);
-	uint offset = grid_offset + getThreadOffset(DTid.x, DTid.y); //getThreadOffset(2, 0);
-	uint threadId = (NUM_THREADS_PER_BLOCK * DTid.y) + DTid.x;//(NUM_THREAD_X * DTid.y) + DTid.x;
+	uint2 DTid1 = uint2(63,63);
+	//uint grid_offset = getGridOffset(1, 1);
+	uint offset = getThreadOffset(DTid.x, DTid.y); //getThreadOffset(2, 0);
+	uint threadId = (64 * DTid.y) + DTid.x;//(NUM_THREAD_X * DTid.y) + DTid.x;
 
 	uint5 node;
 	node.x = 4;
