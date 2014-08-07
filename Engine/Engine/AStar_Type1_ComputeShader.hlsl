@@ -1,20 +1,28 @@
 
 
-#define MAP_SIZE 8
-#define _GRID_RESOLUTION_X_AXIS 8
-#define NUM_NODES_PER_THREAD (_GRID_RESOLUTION_X_AXIS * _GRID_RESOLUTION_X_AXIS)
+//#define MAP_SIZE 8
+//#define _GRID_RESOLUTION_X_AXIS 8
+//#define NUM_NODES_PER_THREAD (_GRID_RESOLUTION_X_AXIS * _GRID_RESOLUTION_X_AXIS)
 
-#define NUM_THREAD_GROUP_X 2
-#define NUM_THREAD_GROUP_Y 2
+//#define NUM_THREAD_GROUP_X 2
+//#define NUM_THREAD_GROUP_Y 2
+
+
+//#define NUM_THREAD_ON_GRID_X (NUM_THREAD_X * NUM_THREAD_GROUP_X)
+//#define NUM_THREAD_ON_GRID_Y (NUM_THREAD_Y * NUM_THREAD_GROUP_Y)
+
+//#define NUM_THREADS_PER_BLOCK (NUM_THREAD_X*NUM_THREAD_Y)
+//#define STRIDE_GRID_ACCESS ( NUM_THREADS_PER_BLOCK*NUM_NODES_PER_THREAD )
 
 #define NUM_THREAD_X 32
 #define NUM_THREAD_Y 32
+//#define NUM_GRID_BLOCK_X 2
+//#define MAP_DIMENSIONS 8
+cbuffer AStarParameters : register(b0){
+	int NUM_GRID_BLOCK_X;
+	int MAP_DIMENSIONS;
+};
 
-#define NUM_THREAD_ON_GRID_X (NUM_THREAD_X * NUM_THREAD_GROUP_X)
-#define NUM_THREAD_ON_GRID_Y (NUM_THREAD_Y * NUM_THREAD_GROUP_Y)
-
-#define NUM_THREADS_PER_BLOCK (NUM_THREAD_X*NUM_THREAD_Y)
-#define STRIDE_GRID_ACCESS ( NUM_THREADS_PER_BLOCK*NUM_NODES_PER_THREAD )
 struct BufType
 {
 	uint f;
@@ -95,23 +103,11 @@ RWStructuredBuffer<SearchResult> gBufferOut : register(u1);
 //RWStructuredBuffer<ParentType> BufferOutClone : register(u1);
 //
 
-uint getGridOffset(uint dispatch_x, uint dispatch_y)
-{
-	uint gridId = NUM_THREAD_GROUP_X * dispatch_y + dispatch_x;
-	return  gridId * STRIDE_GRID_ACCESS;
-}
 
-uint getThreadOffset(uint dispatch_x, uint dispatch_y)
-{
-	//uint gridId = NUM_THREAD_X * dispatch_y + dispatch_x;
-	uint gridId = NUM_THREAD_ON_GRID_X * dispatch_y + dispatch_x;
-	return  gridId * NUM_NODES_PER_THREAD;
-	
-}
 
 uint getGridIntegerCoordinate(uint x, uint y)
 {
-	uint gridId = _GRID_RESOLUTION_X_AXIS * y + x;
+	uint gridId = MAP_DIMENSIONS * y + x;
 	return gridId;
 }
 
@@ -342,10 +338,9 @@ void addToOpenList(uint offset, uint2 thisNode, uint5 parentGridNodeObject, uint
 [numthreads(NUM_THREAD_X, NUM_THREAD_Y, 1)] //NUM_THREAD_X
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid :SV_GroupID)
 {
-	uint2 DTid1 = uint2(63,63);
-	//uint grid_offset = getGridOffset(1, 1);
-	uint offset = getThreadOffset(DTid.x, DTid.y); //getThreadOffset(2, 0);
-	uint threadId = (64 * DTid.y) + DTid.x;//(NUM_THREAD_X * DTid.y) + DTid.x;
+	uint gridId = ((NUM_THREAD_X * NUM_GRID_BLOCK_X) * DTid.y) + DTid.x;
+	uint offset = gridId * (MAP_DIMENSIONS * MAP_DIMENSIONS);  
+	uint threadId = gridId;
 
 	uint5 node;
 	node.x = 4;
@@ -431,13 +426,13 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid :SV_GroupID)
 			//currentGridNode = gGridNodeListOut[pqTopNode.x];		
 			float tempx = float(currentNode.x);
 			float tempy = float(currentNode.y);
-			if (_GRID_RESOLUTION_X_AXIS > tempx + 1) // To the immidiate right
+			if (MAP_DIMENSIONS > tempx + 1) // To the immidiate right
 			{
 				uint2 thisNode = uint2(currentNode.x + 1, currentNode.y);
 					addToOpenList(offset, thisNode, currentNode, m_GridId, targetNode, 10);
 			}
 
-			if (_GRID_RESOLUTION_X_AXIS > (tempx + 1) && 0 <= (tempy - 1)) // To the Right-Down
+			if (MAP_DIMENSIONS > (tempx + 1) && 0 <= (tempy - 1)) // To the Right-Down
 			{
 				uint2 thisNode = uint2(currentNode.x + 1, currentNode.y - 1);
 					addToOpenList(offset, thisNode, currentNode, m_GridId, targetNode, 14);
@@ -461,19 +456,19 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid :SV_GroupID)
 					addToOpenList(offset, thisNode, currentNode, m_GridId, targetNode, 10);
 			}
 
-			if (0 <= (tempx - 1) && _GRID_RESOLUTION_X_AXIS > (tempy + 1)) //To Left-Up
+			if (0 <= (tempx - 1) && MAP_DIMENSIONS > (tempy + 1)) //To Left-Up
 			{
 				uint2 thisNode = uint2(currentNode.x - 1, currentNode.y + 1);
 					addToOpenList(offset, thisNode, currentNode, m_GridId, targetNode, 14);
 			}
 
-			if (_GRID_RESOLUTION_X_AXIS > (tempy + 1)) //To Up
+			if (MAP_DIMENSIONS > (tempy + 1)) //To Up
 			{
 				uint2 thisNode = uint2(currentNode.x, currentNode.y + 1);
 					addToOpenList(offset, thisNode, currentNode, m_GridId, targetNode, 10);
 			}
 
-			if (0 <= (tempx + 1) && _GRID_RESOLUTION_X_AXIS > (tempy + 1)) //To UP-RIGHT
+			if (0 <= (tempx + 1) && MAP_DIMENSIONS > (tempy + 1)) //To UP-RIGHT
 			{
 				uint2 thisNode = uint2(currentNode.x + 1, currentNode.y + 1);
 					addToOpenList(offset, thisNode, currentNode, m_GridId, targetNode, 14);

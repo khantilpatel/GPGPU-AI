@@ -89,6 +89,8 @@ class AStar_Type1_ShaderClass
 			int2 targetLoc;
 		};
 
+
+
 		struct SearchResult
 		{
 			int agentId;
@@ -96,7 +98,12 @@ class AStar_Type1_ShaderClass
 			int2 targetLoc;
 		};
 
-
+		struct AStarParameters{
+			int NUM_GRID_BLOCK_X;
+			int MAP_DIMENSIONS;	
+			int pad1;
+			int pad2;
+		};
 
 public:
 	AStar_Type1_ShaderClass();
@@ -121,11 +128,13 @@ private:
 	ComputeShaderHelperClass* m_computeshader_helper;
 
 	ID3D11ComputeShader* m_computeShader;
-	
+	ID3D11Buffer* m_BufConstantParameters;
+
 	ID3D11Buffer* m_Buffer_AgentList;
 	ID3D11Buffer* m_Buffer_OpenList;
 	ID3D11Buffer* m_Buffer_SearchResult;
 	ID3D11Buffer* m_Buffer_GridNodeListOut;
+
 
 	ID3D11ShaderResourceView*   m_BufAgentList_SRV ;
 	ID3D11ShaderResourceView*	m_WorldMap_SRV;

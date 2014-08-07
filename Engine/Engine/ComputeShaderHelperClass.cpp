@@ -13,6 +13,28 @@ ComputeShaderHelperClass::~ComputeShaderHelperClass()
 {
 }
 
+HRESULT ComputeShaderHelperClass::CreateConstantBuffer(ID3D11Device* pDevice, UINT uElementSize, UINT uCount, void* pInitData, ID3D11Buffer** ppBufOut)
+{
+	*ppBufOut = nullptr;
+
+	D3D11_BUFFER_DESC desc;
+	ZeroMemory(&desc, sizeof(desc));
+	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.ByteWidth = uElementSize * uCount;
+	desc.MiscFlags = 0;
+	desc.StructureByteStride = 0;
+
+	if (pInitData)
+	{
+		D3D11_SUBRESOURCE_DATA InitData;
+		InitData.pSysMem = pInitData;
+		return pDevice->CreateBuffer(&desc, &InitData, ppBufOut);
+	}
+	else
+		return pDevice->CreateBuffer(&desc, nullptr, ppBufOut);
+}
 HRESULT ComputeShaderHelperClass::CreateStructuredBuffer( ID3D11Device* pDevice, UINT uElementSize, UINT uCount, void* pInitData, ID3D11Buffer** ppBufOut )
 {
 	*ppBufOut = nullptr;

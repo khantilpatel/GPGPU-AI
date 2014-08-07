@@ -8,6 +8,8 @@ AStar_Type1_ShaderClass::AStar_Type1_ShaderClass()
 {
 	m_computeshader_helper = 0;
 	m_computeShader = 0;
+	
+	m_BufConstantParameters = 0;
 
 	m_Buffer_AgentList = 0;
 	m_Buffer_SearchResult= 0;
@@ -233,9 +235,14 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	//{
 	//	return false;
 	//}
-	const int NUM_SEARCH_RESULTS = 4096;
-	const int NUM_OPENLIST_COUNT = 4096 * 64;
 
+	const int NUM_SEARCH_RESULTS = 4096;
+	const int NUM_OPENLIST_COUNT = NUM_SEARCH_RESULTS * 64;
+
+	AStarParameters parameters;
+	parameters.MAP_DIMENSIONS = 8; // Like for 8x8 put 8 they are always semetric
+	parameters.NUM_GRID_BLOCK_X = 2;
+	m_computeshader_helper->CreateConstantBuffer(device, sizeof(AStarParameters), 1, &parameters, &m_BufConstantParameters);
 	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_OpenList);
 	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(int6), NUM_OPENLIST_COUNT, nullptr, &m_Buffer_GridNodeListOut);
 	m_computeshader_helper->CreateStructuredBuffer(device, sizeof(SearchResult), NUM_SEARCH_RESULTS, nullptr, &m_Buffer_SearchResult);
@@ -248,9 +255,10 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 
 	ID3D11UnorderedAccessView* aURViews[3] = { m_BufOpenList_URV, m_BufSearchResult_URV, m_BufGridNodeListOut_URV };
 	// Now render the prepared buffers with the shader.
-	deviceContext->CSSetShader(m_computeShader, nullptr, 0);
-	deviceContext->CSSetShaderResources(0, 2, aRViews);
+	deviceContext->CSSetConstantBuffers(0, 1, &m_BufConstantParameters);
+	deviceContext->CSSetShaderResources(0, 2, aRViews);	
 	deviceContext->CSSetUnorderedAccessViews(0, 3, aURViews, nullptr);//3, aURViews, nullptr);
+	deviceContext->CSSetShader(m_computeShader, nullptr, 0);
 	//if ( pCBCS && pCSData )
 	//{
 	//    D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -280,25 +288,25 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	deviceContext->CSSetConstantBuffers( 0, 1, ppCBnullptr );
 
 	/////////////////////////////////////////////////////////////////////
-	//ID3D11Buffer* debugbuf1 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_OpenList);
-	//D3D11_MAPPED_SUBRESOURCE MappedResource1;
-	//int *p1;
-	//deviceContext->Map(debugbuf1, 0, D3D11_MAP_READ, 0, &MappedResource1);
+	ID3D11Buffer* debugbuf1 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_OpenList);
+	D3D11_MAPPED_SUBRESOURCE MappedResource1;
+	int *p1;
+	deviceContext->Map(debugbuf1, 0, D3D11_MAP_READ, 0, &MappedResource1);
 
-	//// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
-	//// This is also a common trick to debug CS programs.
-	//p1 = (int*)MappedResource1.pData;
+	// Set a break point here and put down the expression "p, 1024" in your watch window to see what has been written out by our CS
+	// This is also a common trick to debug CS programs.
+	p1 = (int*)MappedResource1.pData;
 
-	//int nodes1[NUM_OPENLIST_COUNT];
-	//for (int i = 0; i < NUM_OPENLIST_COUNT; i++)
+	int nodes1[NUM_OPENLIST_COUNT];
+	for (int i = 0; i < NUM_OPENLIST_COUNT; i++)
 
-	//{
-	//	nodes1[i] = p1[i];
-	//}
-	//deviceContext->Unmap(debugbuf1, 0);
+	{
+		nodes1[i] = p1[i];
+	}
+	deviceContext->Unmap(debugbuf1, 0);
 
-	//debugbuf1->Release();
-	//debugbuf1 = 0;
+	debugbuf1->Release();
+	debugbuf1 = 0;
 	/////////////////////////////////////////////////////////////////////////////
 	//ID3D11Buffer* debugbuf2 = m_computeshader_helper->CreateAndCopyToDebugBuf(device, deviceContext, m_Buffer_GridNodeListOut);
 	//D3D11_MAPPED_SUBRESOURCE MappedResource2;
@@ -334,7 +342,6 @@ bool AStar_Type1_ShaderClass::Render(ID3D11Device* device, ID3D11DeviceContext* 
 	{
 		nodes3[i] = p3[i];
 	}
-
 	deviceContext->Unmap(debugbuf3, 0);
 
 	debugbuf3->Release();
